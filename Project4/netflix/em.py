@@ -4,6 +4,8 @@ import numpy as np
 from scipy.special import logsumexp
 from common import GaussianMixture
 
+from tqdm import tqdm
+
 
 def estep(X: np.ndarray, mixture: GaussianMixture) -> Tuple[np.ndarray, float]:
     """E-step: Softly assigns each datapoint to a gaussian component
@@ -18,55 +20,38 @@ def estep(X: np.ndarray, mixture: GaussianMixture) -> Tuple[np.ndarray, float]:
         float: log-likelihood of the assignment
 
     """
-    # TODO
-    
-    # import is here because of MIT class evaluation
-    from scipy.stats import multivariate_normal
-    
-    # extract input dimensions
-    n,d = X.shape
-    K = mixture.p.shape[0]
-    
-    # build the C list, whose every element C[i] is the array of indices 
-    # correspondig to non zero element of X[i]
-    C = []
+    n, _ = X.shape
+    K, _ = mixture.mu.shape
+    post = np.zeros((n, K))
+
+    ll = 0
     for i in range(n):
-        C.append(np.nonzero(X[i])[0])
-    
-    # build the prior matrix
-    log_prior =  np.tile(np.log(mixture.p), (n, 1))
-    
-    # build the likelihood matrix
-    likelihoods = np.zeros((n,K))
-    for i in range(n):
+        mask = (X[i, :] != 0)
         for j in range(K):
-            x_relevant = X[i][C[i]]
-            mu_relevant = mixture.mu[j][C[i]]
-            cov_matrix = mixture.var[j]*np.eye(x_relevant.shape[0])
-            if x_relevant.size > 0:
-                likelihoods[i,j] = np.maximum(multivariate_normal(mean=mu_relevant, cov=cov_matrix).pdf(x_relevant), 1e-10)
-            else:
-                likelihoods[i,j] = 1
-    
+            log_likelihood = log_gaussian(X[i, mask], mixture.mu[j, mask],
+                                          mixture.var[j])
+            post[i, j] = np.log(mixture.p[j] + 1e-16) + log_likelihood
+        total = logsumexp(post[i, :])
+        post[i, :] = post[i, :] - total
+        ll += total
 
-    # build the f[u,j] matrix
-    f = log_prior + np.log(likelihoods)
+    return np.exp(post), ll
 
-    # build the posterior matrix
-    normalizer = np.sum(np.exp(f), axis=1)
-    log_posterior = f - np.tile(np.log(normalizer), (K,1)).T
-    post = np.exp(log_posterior)
+def log_gaussian(x: np.ndarray, mean: np.ndarray, var: float) -> float:
+    """Computes the log probablity of vector x under a normal distribution
 
-    # weighted_likelihoods[u][j] represents the probability of picking the model j
-    # and then generating the point u
-    weighted_likelihoods = np.multiply(likelihoods, mixture.p)
-    
-    # compute datasetLL
-    dataset_LL = np.sum(np.log(np.sum(weighted_likelihoods, axis=1)))
-    
-    return post, dataset_LL
+    Args:
+        x: (d, ) array holding the vector's coordinates
+        mean: (d, ) mean of the gaussian
+        var: variance of the gaussian
 
-
+    Returns:
+        float: the log probability
+    """
+    d = len(x)
+    log_prob = -d / 2.0 * np.log(2 * np.pi * var)
+    log_prob -= 0.5 * ((x - mean)**2).sum() / var
+    return log_prob
 
 
 def mstep(X: np.ndarray, post: np.ndarray, mixture: GaussianMixture,
@@ -170,7 +155,7 @@ def run(X: np.ndarray, mixture: GaussianMixture,
     
     # keep updating until the dataset likelihood converges
     
-    while datasetLL-old_datasetLL >= 1e-6 * np.abs(datasetLL)+0.000001:
+    while datasetLL-old_datasetLL >= 1e-6 * np.abs(datasetLL):
         old_datasetLL = datasetLL
         post, datasetLL = estep(X, mixture)
         mixture = mstep(X, post, mixture)
@@ -189,4 +174,19 @@ def fill_matrix(X: np.ndarray, mixture: GaussianMixture) -> np.ndarray:
     Returns
         np.ndarray: a (n, d) array with completed data
     """
-    raise NotImplementedError
+    n, d = X.shape
+    X_pred = X.copy()
+    K, _ = mixture.mu.shape
+
+    for i in range(n):
+        mask = X[i, :] != 0
+        mask0 = X[i, :] == 0
+        post = np.zeros(K)
+        for j in range(K):
+            log_likelihood = log_gaussian(X[i, mask], mixture.mu[j, mask],
+                                          mixture.var[j])
+            post[j] = np.log(mixture.p[j]) + log_likelihood
+        post = np.exp(post - logsumexp(post))
+        X_pred[i, mask0] = np.dot(post, mixture.mu[:, mask0])
+    return X_pred
+

@@ -32,8 +32,7 @@ for idx, K in enumerate(candidates_K):
     for seed in candidates_seed:
         print('   new seed')
         # initialize the mixture and the posterior model probabilities matrix
-        init_gauss_mixt = common.init(X, K, seed)[0]
-        posterior = np.zeros((n, K))
+        init_gauss_mixt, posterior = common.init(X, K, seed)
         
         # run the algorithm to fit the current model
         # choose the type of model among {kmeans, nnaive_em}

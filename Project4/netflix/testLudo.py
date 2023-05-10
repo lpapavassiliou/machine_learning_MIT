@@ -16,3 +16,7 @@ k = np.array([1,0,-1,0])
 # print(k[k!=0])
 #print(np.multiply(A.T, w).T)
 print(np.maximum(k, 0.5))
+
+
+cov_matrix = w[:, None, None] * np.eye(1)
+print(cov_matrix)
