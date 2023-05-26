@@ -107,9 +107,10 @@ def run_episode(for_training):
     current_room_desc, current_quest_desc, terminal = framework.newGame()
     time = 0
 
+    # simulate the game
     while not terminal:
         
-        # Estimate current state from the description
+        # Build current state from the description
         current_state1 = dict_room_desc[current_room_desc]
         current_state2 = dict_quest_desc[current_quest_desc]
         
@@ -117,12 +118,12 @@ def run_episode(for_training):
         action_idx, object_idx = epsilon_greedy(current_state1, current_state2, q_func, epsilon)
         next_room_desc, next_quest_desc, reward, terminal = framework.step_game(current_room_desc, current_quest_desc, action_idx, object_idx)
         
-        # Estimate next state from description
+        # Build next state from description
         next_state1 = dict_room_desc[next_room_desc]
         next_state2 = dict_quest_desc[next_quest_desc]
         
         if for_training:
-            # update Q-function.
+            # update Q-function
             tabular_q_learning(q_func, current_state1, current_state2, action_idx,
                        object_idx, reward, next_state1, next_state2, terminal)
 

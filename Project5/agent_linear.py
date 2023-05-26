@@ -46,6 +46,7 @@ def epsilon_greedy(state_vector, theta, epsilon):
     """
     
     # TODO Your code here
+    
     import random
     
     if random.random() < epsilon:
@@ -93,7 +94,7 @@ def linear_q_learning(theta, current_state_vector, action_index, object_index,
         # consider reward and reward-to-go
         y = reward + GAMMA*np.max(q_next_state)
     
-    # evaluate Q(s,c)
+    # evaluate Q(s,c), where c represents the action-object pair
     Q_sc = (theta @ current_state_vector)[tuple2index(action_index, object_index)]
 
     # reshape theta as a raw vector
@@ -134,16 +135,16 @@ def run_episode(for_training):
     while not terminal:
         
         # Estimate current state from the description
-        current_state = current_room_desc + ' ' + current_quest_desc
-        current_state_vector = utils.extract_bow_feature_vector(current_state, dictionary)
+        current_state_desc = current_room_desc + ' ' + current_quest_desc
+        current_state_vector = utils.extract_bow_feature_vector(current_state_desc, dictionary)
         
         # Choose next action and execute
         action_idx, object_idx = epsilon_greedy(current_state_vector, theta, epsilon)
         next_room_desc, next_quest_desc, reward, terminal = framework.step_game(current_room_desc, current_quest_desc, action_idx, object_idx)
         
         # Estimate next state from description
-        next_state = next_room_desc + ' ' + next_quest_desc
-        next_state_vector = utils.extract_bow_feature_vector(next_state, dictionary)
+        next_state_desc = next_room_desc + ' ' + next_quest_desc
+        next_state_vector = utils.extract_bow_feature_vector(next_state_desc, dictionary)
         
         if for_training:
             # update Q-function.
@@ -190,7 +191,7 @@ def run():
     return single_run_epoch_rewards_test
 
 
-if __name__ == '__main__' or True:
+if True: #__name__ == '__main__':
     state_texts = utils.load_data('game.tsv')
     dictionary = utils.bag_of_words(state_texts)
     state_dim = len(dictionary)
