@@ -5,7 +5,9 @@ Code for the online course "Machine Learning with Python: from Linear Models to 
 
 PROJECTS
 
-Project1 - Cassification with Perceptron and Pegasos
+Project1 - Cassification with linear models
+		- Perceptron
+		- Pegasos
 
 Project2 - MNIST digit classification solved with different approaches:
 		- linear regression (clearly wrong model) with cubic kernel
@@ -13,7 +15,7 @@ Project2 - MNIST digit classification solved with different approaches:
 		- multiclass SVM
 		- multiclass SVM with cube-kernel
 
-Project3 - MNIST digit classification with NNS
+Project3 - MNIST digit classification with NNs
 		- CNN
 		- MLP
 
