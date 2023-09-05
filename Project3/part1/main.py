@@ -2,6 +2,7 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 sys.path.append("..")
+sys.path.append(".")
 from utils import *
 from linear_regression import *
 from svm import *
